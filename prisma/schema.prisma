@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RolUsuario {
+  cliente
+  admin
+
+  @@map("rol_usuario")
+}
+
+enum EstadoReservacion {
+  pendiente
+  confirmada
+  cancelada
+  completada
+
+  @@map("estado_reservacion")
+}
+
+model Usuario {
+  id           Int           @id @default(autoincrement())
+  nombre       String        @db.VarChar(100)
+  email        String        @unique @db.VarChar(150)
+  passwordHash String        @map("password_hash") @db.VarChar(255)
+  rol          RolUsuario    @default(cliente)
+  creadoEn     DateTime      @default(now()) @map("creado_en")
+  
+  reservaciones Reservacion[]
+
+  @@map("usuarios")
+}
+
+model Mesa {
+  id            Int           @id @default(autoincrement())
+  numero        Int           @unique
+  capacidad     Int
+  ubicacion     String?       @db.VarChar(100)
+  activa        Boolean       @default(true)
+  creadoEn      DateTime      @default(now()) @map("creado_en")
+
+  reservaciones Reservacion[]
+
+  @@map("mesas")
+}
+
+model Reservacion {
+  id            Int               @id @default(autoincrement())
+  usuarioId     Int               @map("usuario_id")
+  mesaId        Int               @map("mesa_id")
+  fecha         DateTime          @db.Date
+  hora          String            @db.VarChar(10)
+  numComensales Int               @map("num_comensales")
+  estado        EstadoReservacion @default(pendiente)
+  creadoEn      DateTime          @default(now()) @map("creado_en")
+
+  usuario       Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  mesa          Mesa              @relation(fields: [mesaId], references: [id], onDelete: Restrict)
+
+  @@map("reservaciones")
+}
